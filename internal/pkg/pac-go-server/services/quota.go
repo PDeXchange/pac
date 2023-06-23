@@ -212,6 +212,14 @@ func GetUserQuota(c *gin.Context) {
 	}
 	availableQuota.CPU = userQuota.CPU - usedQuota.CPU
 	availableQuota.Memory = userQuota.Memory - usedQuota.Memory
+	
+	// in case of negative available quota set it to 0
+	if availableQuota.CPU < 0 {
+		availableQuota.CPU = 0
+	}
+	if availableQuota.Memory < 0 {
+		availableQuota.Memory = 0
+	}
 	logger.Debug("quotas of user", zap.Any("used quota", usedQuota), zap.Any("available quota", availableQuota))
 	c.JSON(http.StatusOK, gin.H{"user_quota": userQuota, "used_quota": usedQuota, "available_quota": availableQuota})
 }
