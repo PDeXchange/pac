@@ -4,17 +4,13 @@ import (
 	"fmt"
 	"net/http"
 
-	log "github.com/PDeXchange/pac/internal/pkg/pac-go-server/logger"
-	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/models"
-	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
+	log "github.com/PDeXchange/pac/internal/pkg/pac-go-server/logger"
+	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/models"
+	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/utils"
 	"github.com/gin-gonic/gin"
-)
-
-var (
-	quota models.Quota
 )
 
 // Get the respective quota of the group ID passed.
@@ -22,7 +18,7 @@ func GetQuota(c *gin.Context) {
 	logger := log.GetLogger()
 	gid := c.Param("id")
 	if err := checkGroupExists(c, gid); err != nil {
-		logger.Error("Cannot find group by ID", zap.String("id", gid))
+		logger.Error("Cannot find group by ID", zap.String("id", gid), zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("The group ID - %s does not exist.", gid)})
 		return
 	}
@@ -45,8 +41,8 @@ func GetUserQuota(c *gin.Context) {
 }
 
 func CreateQuota(c *gin.Context) {
+	var quota models.Quota
 	logger := log.GetLogger()
-
 	gid := c.Param("id")
 
 	if err := checkGroupExists(c, gid); err != nil {
@@ -96,8 +92,8 @@ func CreateQuota(c *gin.Context) {
 }
 
 func UpdateQuota(c *gin.Context) {
+	var quota models.Quota
 	logger := log.GetLogger()
-
 	gid := c.Param("id")
 
 	if err := checkGroupExists(c, gid); err != nil {

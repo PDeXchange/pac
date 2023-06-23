@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/PDeXchange/pac/internal/pkg/pac-go-server/logger"
-	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
+
+	log "github.com/PDeXchange/pac/internal/pkg/pac-go-server/logger"
+	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/models"
 )
 
 func (db *MongoDB) GetUserQuota(s string) (models.Quota, error) {
