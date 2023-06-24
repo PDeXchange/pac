@@ -234,22 +234,23 @@ func getUserQuota(c *gin.Context) (models.Capacity, error) {
 	userGroups := kc.GetUserGroups()
 	logger.Debug("user groups", zap.Any("user groups", userGroups))
 
-	if len(userGroups) != 0 {
-		logger.Debug("fetching user quota for groups")
-		var userGroupIds []string
-		for _, grp := range userGroups {
-			userGroupIds = append(userGroupIds, grp.ID)
-		}
-		groupsQuota, err := dbCon.GetGroupsQuota(userGroupIds)
-		if err != nil {
-			logger.Error("failed to get quota", zap.String("user id", userID), zap.Error(err))
-			return userQuota, err
-		}
-		logger.Debug("user group quota", zap.String("user id", userID), zap.Any("group quota", groupsQuota))
-		userQuota = getMaxCapacity(groupsQuota)
-		logger.Debug("user maximum quota", zap.Any("user maximum quota", userQuota))
-	} else {
+	if len(userGroups) == 0 {
 		logger.Debug("user does not belong to any group", zap.String("user id", userID))
+		return userQuota, nil
+
 	}
+	logger.Debug("fetching user quota for groups")
+	var userGroupIds []string
+	for _, grp := range userGroups {
+		userGroupIds = append(userGroupIds, grp.ID)
+	}
+	groupsQuota, err := dbCon.GetGroupsQuota(userGroupIds)
+	if err != nil {
+		logger.Error("failed to get quota", zap.String("user id", userID), zap.Error(err))
+		return userQuota, err
+	}
+	logger.Debug("user group quota", zap.String("user id", userID), zap.Any("group quota", groupsQuota))
+	userQuota = getMaxCapacity(groupsQuota)
+	logger.Debug("user maximum quota", zap.Any("user maximum quota", userQuota))
 	return userQuota, nil
 }
