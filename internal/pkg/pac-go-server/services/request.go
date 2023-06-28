@@ -265,7 +265,7 @@ func ExitGroup(c *gin.Context) {
 		return
 	}
 
-	// check if the user has already requested access to the group
+	// check if the user has already requested to exit from the group
 	r, err := dbCon.GetRequestByGroupIDAndUserID(groupID, userID)
 	if err != nil {
 		logger.Error("failed to fetch requests", zap.String("group id", groupID), zap.String("user id", userID), zap.Error(err))
