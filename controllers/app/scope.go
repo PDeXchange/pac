@@ -43,18 +43,83 @@ type ControllerScopeParams struct {
 	Client  client.Client
 	Type    string
 	Catalog *v1alpha1.Catalog
-	Service *v1alpha1.Service
 	Debug   bool
 }
 
 type ControllerScope struct {
 	logr.Logger
-	patchHelper    *patch.Helper
 	Client         client.Client
 	Catalog        *v1alpha1.Catalog
-	Service        *v1alpha1.Service
 	PowerVSClient  *powervs.Client
 	PlatformClient *platform.Client
+}
+
+type CatalogScopeParams struct {
+	ControllerScopeParams
+}
+
+type ServiceScopeParams struct {
+	ControllerScopeParams
+	Service *v1alpha1.Service
+}
+
+type CatalogScope struct {
+	ControllerScope
+	catalogPatchHelper *patch.Helper
+}
+
+type ServiceScope struct {
+	ControllerScope
+	servicePatchHelper *patch.Helper
+	Service            *v1alpha1.Service
+}
+
+func NewCatalogScope(ctx context.Context, params CatalogScopeParams) (scope *CatalogScope, err error) {
+	scope = &CatalogScope{}
+
+	ctrlScope, err := NewControllerScope(ctx, params.ControllerScopeParams)
+	if err != nil {
+		err = errors.Wrap(err, "failed to init controller scope")
+		return nil, err
+	}
+
+	scope.ControllerScope = *ctrlScope
+
+	catalogHelper, err := patch.NewHelper(params.Catalog, params.Client)
+	if err != nil {
+		err = errors.Wrap(err, "failed to init patch helper")
+		return nil, err
+	}
+	scope.catalogPatchHelper = catalogHelper
+
+	return scope, nil
+}
+
+func NewServiceScope(ctx context.Context, params ServiceScopeParams) (scope *ServiceScope, err error) {
+	scope = &ServiceScope{}
+
+	ctrlScope, err := NewControllerScope(ctx, params.ControllerScopeParams)
+	if err != nil {
+		err = errors.Wrap(err, "failed to init controller scope")
+		return nil, err
+	}
+
+	scope.ControllerScope = *ctrlScope
+
+	serviceHelper, err := patch.NewHelper(params.Service, params.Client)
+	if err != nil {
+		err = errors.Wrap(err, "failed to init patch helper")
+		return nil, err
+	}
+	scope.servicePatchHelper = serviceHelper
+
+	if params.Service == nil {
+		err = errors.New("service is required when creating a ServiceScope")
+		return
+	}
+	scope.Service = params.Service
+
+	return scope, nil
 }
 
 func NewControllerScope(ctx context.Context, params ControllerScopeParams) (scope *ControllerScope, err error) {
@@ -76,21 +141,6 @@ func NewControllerScope(ctx context.Context, params ControllerScopeParams) (scop
 		return
 	}
 	scope.Catalog = params.Catalog
-
-	helper, err := patch.NewHelper(params.Catalog, params.Client)
-	if err != nil {
-		err = errors.Wrap(err, "failed to init patch helper")
-		return nil, err
-	}
-	scope.patchHelper = helper
-
-	if params.Type == serviceController {
-		if params.Service == nil {
-			err = errors.New("service is required when creating a scope for service controller")
-			return
-		}
-		scope.Service = params.Service
-	}
 
 	platformClient, err := platform.NewClient()
 	if err != nil {
@@ -124,12 +174,12 @@ func NewControllerScope(ctx context.Context, params ControllerScopeParams) (scop
 	return scope, nil
 }
 
-// Close closes the scope persisting the catalog/service configuration and status.
-func (m *ControllerScope) Close() error {
-	return m.PatchObject()
+// PatchObject persists the catalog/service configuration and status.
+func (m *CatalogScope) PatchCatalogObject() error {
+	return m.catalogPatchHelper.Patch(context.TODO(), m.Catalog)
 }
 
 // PatchObject persists the catalog/service configuration and status.
-func (m *ControllerScope) PatchObject() error {
-	return m.patchHelper.Patch(context.TODO(), m.Catalog)
+func (m *ServiceScope) PatchServiceObject() error {
+	return m.servicePatchHelper.Patch(context.TODO(), m.Service)
 }
