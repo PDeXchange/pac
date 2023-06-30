@@ -74,60 +74,56 @@ type ServiceScope struct {
 	Service            *v1alpha1.Service
 }
 
-func NewCatalogScope(ctx context.Context, params CatalogScopeParams) (scope *CatalogScope, err error) {
-	scope = &CatalogScope{}
+func NewCatalogScope(ctx context.Context, params CatalogScopeParams) (*CatalogScope, error) {
+	scope := &CatalogScope{}
 
 	ctrlScope, err := NewControllerScope(ctx, params.ControllerScopeParams)
 	if err != nil {
-		err = errors.Wrap(err, "failed to init controller scope")
-		return nil, err
+		return scope, errors.Wrap(err, "failed to init controller scope")
 	}
 
 	scope.ControllerScope = *ctrlScope
 
 	catalogHelper, err := patch.NewHelper(params.Catalog, params.Client)
 	if err != nil {
-		err = errors.Wrap(err, "failed to init patch helper")
-		return nil, err
+		return scope, errors.Wrap(err, "failed to init patch helper")
 	}
 	scope.catalogPatchHelper = catalogHelper
 
 	return scope, nil
 }
 
-func NewServiceScope(ctx context.Context, params ServiceScopeParams) (scope *ServiceScope, err error) {
-	scope = &ServiceScope{}
+func NewServiceScope(ctx context.Context, params ServiceScopeParams) (*ServiceScope, error) {
+	scope := &ServiceScope{}
 
 	ctrlScope, err := NewControllerScope(ctx, params.ControllerScopeParams)
 	if err != nil {
 		err = errors.Wrap(err, "failed to init controller scope")
-		return nil, err
+		return scope, err
 	}
-
 	scope.ControllerScope = *ctrlScope
+
+	if params.Service == nil {
+		err = errors.New("service is required when creating a ServiceScope")
+		return scope, err
+	}
+	scope.Service = params.Service
 
 	serviceHelper, err := patch.NewHelper(params.Service, params.Client)
 	if err != nil {
 		err = errors.Wrap(err, "failed to init patch helper")
-		return nil, err
+		return scope, err
 	}
 	scope.servicePatchHelper = serviceHelper
-
-	if params.Service == nil {
-		err = errors.New("service is required when creating a ServiceScope")
-		return
-	}
-	scope.Service = params.Service
 
 	return scope, nil
 }
 
-func NewControllerScope(ctx context.Context, params ControllerScopeParams) (scope *ControllerScope, err error) {
-	scope = &ControllerScope{}
+func NewControllerScope(ctx context.Context, params ControllerScopeParams) (*ControllerScope, error) {
+	scope := &ControllerScope{}
 
 	if params.Client == nil {
-		err = errors.New("client is required when creating a CatalogScope")
-		return
+		return scope, errors.New("client is required when creating a CatalogScope")
 	}
 	scope.Client = params.Client
 
@@ -137,14 +133,13 @@ func NewControllerScope(ctx context.Context, params ControllerScopeParams) (scop
 	scope.Logger = params.Logger
 
 	if params.Catalog == nil {
-		err = errors.New("catalog is required when creating a scope for catalog and service controller")
-		return
+		return scope, errors.New("catalog is required when creating a scope for catalog and service controller")
 	}
 	scope.Catalog = params.Catalog
 
 	platformClient, err := platform.NewClient()
 	if err != nil {
-		return nil, errors.Wrap(err, "error creating platform services client")
+		return scope, errors.Wrap(err, "error creating platform services client")
 	}
 	scope.PlatformClient = platformClient
 
@@ -153,7 +148,7 @@ func NewControllerScope(ctx context.Context, params ControllerScopeParams) (scop
 	case v1alpha1.CatalogTypeVM:
 		cloudInstanceID, zone, accountID, err = util.ParsePowerVSCRN(params.Catalog.Spec.VM.CRN)
 		if err != nil {
-			return nil, err
+			return scope, err
 		}
 	}
 
@@ -163,7 +158,7 @@ func NewControllerScope(ctx context.Context, params ControllerScopeParams) (scop
 		Zone:            zone,
 		Debug:           params.Debug})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create powervs client")
+		return scope, errors.Wrap(err, "failed to create powervs client")
 	}
 	scope.PowerVSClient = powerVSClient
 

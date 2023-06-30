@@ -83,7 +83,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	defer func() {
-		if err := scope.PatchServiceObject(); err != nil && err == nil {
+		if err := scope.PatchServiceObject(); err != nil {
 			l.Error(err, "error updating service status")
 		}
 	}()

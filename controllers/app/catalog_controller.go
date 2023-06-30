@@ -161,7 +161,7 @@ func (r *CatalogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	defer func() {
-		if err := scope.PatchCatalogObject(); err != nil && err == nil {
+		if err := scope.PatchCatalogObject(); err != nil {
 			l.Error(err, "error updating catalog status")
 		}
 	}()
