@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/IBM-Cloud/power-go-client/power/models"
 	"github.com/IBM/go-sdk-core/v5/core"
@@ -92,11 +91,6 @@ func (s *VM) Delete(ctx context.Context) (bool, error) {
 	s.scope.Service.Status.ClearVMStatus()
 
 	return true, nil
-}
-
-func isVMExpired(scope *scope.ServiceScope, pvmInstance *models.PVMInstance) bool {
-	currentTime := time.Now()
-	return currentTime.After(scope.Service.Spec.Expiry.Time)
 }
 
 func cleanupVM(scope *scope.ServiceScope) error {
