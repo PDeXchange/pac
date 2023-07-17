@@ -11,7 +11,7 @@ import (
 type EventType string
 type EventLogLevel string
 
-var (
+const (
 	EventGroupJoinRequest     EventType = "GROUP_JOIN_REQUEST"
 	EventServiceExpiryRequest EventType = "SERVICE_EXPIRY_REQUEST"
 	EventGroupExitRequest     EventType = "GROUP_EXIT_REQUEST"
@@ -121,7 +121,7 @@ PAC Support.
 `
 
 func (e *Event) ComposeMailBody() (string, error) {
-	tmpl, err := template.New("test").Parse(bodyTemplate)
+	tmpl, err := template.New("pac").Parse(bodyTemplate)
 	if err != nil {
 		return "", err
 	}
