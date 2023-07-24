@@ -7,7 +7,6 @@ import (
 	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/models"
 	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/utils"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // GetEvents returns all events
@@ -23,11 +22,6 @@ func GetEvents(c *gin.Context) {
 
 	// Calculate the starting index and ending index for the current page
 	startIndex := (pageInt - 1) * perPageInt
-
-	// MongoDB options to handle paging
-	findOptions := options.Find()
-	findOptions.SetSkip(startIndex)
-	findOptions.SetLimit(perPageInt)
 
 	var userID string
 	if !kc.IsRole(utils.ManagerRole) {
