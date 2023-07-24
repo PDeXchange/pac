@@ -46,28 +46,13 @@ func GetEvents(c *gin.Context) {
 		totalPages++
 	}
 
-	var response = struct {
-		TotalPages int64          `json:"total_pages"`
-		TotalItems int64          `json:"total_items"`
-		Events     []models.Event `json:"events"`
-		Links      struct {
-			Self string `json:"self"`
-			Next string `json:"next,omitempty"`
-			Last string `json:"last,omitempty"`
-		} `json:"links"`
-	}{
+	var response = models.EventResponse{
 		TotalPages: totalPages,
 		TotalItems: totalCount,
 		Events:     events,
-		Links: struct {
-			Self string `json:"self"`
-			Next string `json:"next,omitempty"`
-			Last string `json:"last,omitempty"`
-		}{
+		Links: models.Links{
 			Self: c.Request.URL.String(),
-			// Get the next page link
 			Next: getNextPageLink(c, pageInt, totalPages),
-			// Get the last page link
 			Last: getLastPageLink(c, totalPages),
 		},
 	}
