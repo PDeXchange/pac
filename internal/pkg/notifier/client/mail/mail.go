@@ -40,7 +40,9 @@ func (m *Mail) Notify(event models.Event) error {
 	// TODO: Add BCC to all the admins or to the group alias when we have it
 	bcc := mail.NewEmail("Power Access Cloud", "PowerACL@ibm.com")
 	personalization.AddTos(to)
-	personalization.AddBCCs(bcc)
+	if event.NotifyAdmin {
+		personalization.AddBCCs(bcc)
+	}
 	personalization.Subject = fmt.Sprintf("Power Access Cloud - %s", event.Type)
 
 	m1.AddPersonalizations(personalization)
