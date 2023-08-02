@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/models"
 )
 
 // GetTermsAndConditionsByUserID gets the terms and conditions status for a user.
 func (db *MongoDB) GetTermsAndConditionsByUserID(id string) (*models.TermsAndConditions, error) {
-	terms := []models.TermsAndConditions{}
+	var terms models.TermsAndConditions
 
 	if id == "" {
 		return nil, fmt.Errorf("user id is required")
@@ -23,21 +24,13 @@ func (db *MongoDB) GetTermsAndConditionsByUserID(id string) (*models.TermsAndCon
 	collection := db.Database.Collection("tnc")
 	ctx, cancel := context.WithTimeout(context.Background(), dbContextTimeout)
 	defer cancel()
-	cur, err := collection.Find(ctx, filter)
-	if err != nil {
+	if err := collection.FindOne(ctx, filter).Decode(&terms); err != nil && err != mongo.ErrNoDocuments {
 		return nil, fmt.Errorf("error getting terms and coditions entries: %w", err)
-	}
-	defer cur.Close(ctx)
-
-	if err = cur.All(context.TODO(), &terms); err != nil {
-		return nil, fmt.Errorf("error fetching terms and coditions entries: %w", err)
+	} else if err == mongo.ErrNoDocuments {
+		return nil, fmt.Errorf("no terms and coditions entries found for user id: %s, err: %w", id, err)
 	}
 
-	if len(terms) == 0 {
-		return nil, fmt.Errorf("no terms and coditions entries found for user id: %s, %w", id, mongo.ErrNoDocuments)
-	}
-
-	return &terms[0], nil
+	return &terms, nil
 }
 
 // AcceptTermsAndConditions updates the terms and conditions for a user. Creates a new entry if one does not exist or updates the existing one.
