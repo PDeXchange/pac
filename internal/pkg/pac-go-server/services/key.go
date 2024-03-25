@@ -11,6 +11,15 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// GetAllKeys			godoc
+// @Summary			Get all keys
+// @Description		Get all keys
+// @Tags			keys
+// @Accept			json
+// @Produce			json
+// @Param			Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success			200
+// @Router			/api/v1/keys [get]
 // Get the Key values and update.
 func GetAllKeys(c *gin.Context) {
 	kc := client.NewKeyClockClient(c.Request.Context())
@@ -28,6 +37,16 @@ func GetAllKeys(c *gin.Context) {
 	c.JSON(http.StatusOK, keys)
 }
 
+// GetKey				godoc
+// @Summary				Get key
+// @Description			Get key
+// @Tags				keys
+// @Accept				json
+// @Produce				json
+// @Param				Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Param				id path string true "key-id to be fetched"
+// @Success				200
+// @Router				/api/v1/keys/{id} [get]
 func GetKey(c *gin.Context) {
 	id := c.Param("id")
 	key, err := dbCon.GetKeyByID(id)
@@ -38,6 +57,16 @@ func GetKey(c *gin.Context) {
 	c.JSON(http.StatusOK, key)
 }
 
+// CreateKey			godoc
+// @Summary			Create key
+// @Description		Create key
+// @Tags			keys
+// @Accept			json
+// @Produce			json
+// @Param			key body models.Key true "Create key"
+// @Param			Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success			200
+// @Router			/api/v1/keys [post]
 func CreateKey(c *gin.Context) {
 	var key = models.GetNewKey()
 	// Step0: Get the authenticated user's ID
@@ -71,6 +100,16 @@ func CreateKey(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+// DeleteKey			godoc
+// @Summary			Delete key
+// @Description		Delete key
+// @Tags			keys
+// @Accept			json
+// @Produce			json
+// @Param			id path string true "key-id to be deleted"
+// @Param			Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success			200
+// @Router			/api/v1/keys/{id} [delete]
 func DeleteKey(c *gin.Context) {
 	id := c.Param("id")
 	key, err := dbCon.GetKeyByID(id)
