@@ -35,6 +35,15 @@ func SetKubeClient(client kubernetes.Client) {
 	kubeClient = client
 }
 
+// GetAllServices		godoc
+// @Summary			Get all services
+// @Description		Get all services
+// @Tags			services
+// @Accept			json
+// @Produce			json
+// @Param			Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success			200
+// @Router			/api/v1/services [get]
 func GetAllServicesHandler(c *gin.Context) {
 	serviceItems, err := getAllServices(c)
 	if err != nil {
@@ -75,6 +84,16 @@ func getAllServices(c *gin.Context) ([]models.Service, error) {
 	return serviceItems, nil
 }
 
+// GetService			godoc
+// @Summary			Get service
+// @Description		Get service
+// @Tags			services
+// @Accept			json
+// @Produce			json
+// @Param			name path string true "service name"
+// @Param			Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success			200
+// @Router			/api/v1/services/{name} [get]
 func GetService(c *gin.Context) {
 	logger := log.GetLogger()
 	serviceName := c.Param("name")
@@ -105,6 +124,16 @@ func GetService(c *gin.Context) {
 	c.JSON(http.StatusOK, serviceItem)
 }
 
+// CreateService		godoc
+// @Summary			Create service
+// @Description		Create service
+// @Tags			services
+// @Accept			json
+// @Produce			json
+// @Param			service body models.Service true "Create service"
+// @Param			Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success			200
+// @Router			/api/v1//services [post]
 func CreateService(c *gin.Context) {
 	logger := log.GetLogger()
 	service := models.Service{}
@@ -224,6 +253,16 @@ func CreateService(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+// DeleteService		godoc
+// @Summary			Delete service
+// @Description		Delete service
+// @Tags			services
+// @Accept			json
+// @Produce			json
+// @Param			name path string true "service name to be deleted"
+// @Param			Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success			200
+// @Router			/api/v1/services/{name} [delete]
 func DeleteServiceHandler(c *gin.Context) {
 	err := deleteService(c, c.Param("name"))
 	if err != nil {

@@ -8,6 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetUsers			godoc
+// @Summary			Get all users
+// @Description		Get all users
+// @Tags			user
+// @Accept			json
+// @Produce			json
+// @Param			Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success			200
+// @Router			/api/v1/users [get]
 func GetUsers(c *gin.Context) {
 	usrs, err := client.NewKeyClockClient(c.Request.Context()).GetUsers()
 	if err != nil {
@@ -35,6 +44,16 @@ func GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
+// GetUser			godoc
+// @Summary			Get user
+// @Description		Get user based on given id
+// @Tags			user
+// @Accept			json
+// @Produce			json
+// @Param			id path string true "user-id for user to be fetched"
+// @Param			Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success			200
+// @Router			/api/v1/users/{id} [get]
 func GetUser(c *gin.Context) {
 	id := c.Param("id")
 	usrs, err := client.NewKeyClockClient(c.Request.Context()).GetUsers()
