@@ -2,8 +2,7 @@ package powervs
 
 import (
 	"context"
-
-	"github.com/pkg/errors"
+	"fmt"
 
 	"github.com/IBM-Cloud/power-go-client/clients/instance"
 	"github.com/IBM-Cloud/power-go-client/ibmpisession"
@@ -44,7 +43,7 @@ func (s *Client) GetInstance(id string) (*models.PVMInstance, error) {
 func (s *Client) GetImageByName(name string) (*models.ImageReference, error) {
 	images, err := s.imageClient.GetAll()
 	if err != nil {
-		return nil, errors.Wrap(err, "error retrieving images")
+		return nil, fmt.Errorf("error retrieving images: %w", err)
 	}
 
 	for _, image := range images.Images {
@@ -53,14 +52,14 @@ func (s *Client) GetImageByName(name string) (*models.ImageReference, error) {
 		}
 	}
 
-	return nil, errors.Errorf("error retrieving image by name %s", name)
+	return nil, fmt.Errorf("error retrieving image by name %s", name)
 }
 
 // GetNetworkByName returns *models.NetworkReference for given network name if exists, if not will return appropriate error
 func (s *Client) GetNetworkByName(name string) (*models.NetworkReference, error) {
 	networks, err := s.networkClient.GetAll()
 	if err != nil {
-		return nil, errors.Wrap(err, "error retrieving networks")
+		return nil, fmt.Errorf("error retrieving networks: %w", err)
 	}
 
 	for _, network := range networks.Networks {
@@ -69,7 +68,7 @@ func (s *Client) GetNetworkByName(name string) (*models.NetworkReference, error)
 		}
 	}
 
-	return nil, errors.Errorf("error retrieving network by name %s", name)
+	return nil, fmt.Errorf("error retrieving network by name %s", name)
 }
 
 func (s *Client) GetNetworks() (*models.Networks, error) {

@@ -17,10 +17,11 @@ limitations under the License.
 package util
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 
-	"github.com/pkg/errors"
+	"errors"
 
 	appv1alpha1 "github.com/PDeXchange/pac/apis/app/v1alpha1"
 )
@@ -47,7 +48,7 @@ func ValidateSysType(sysType string) error {
 			return nil
 		}
 	}
-	return errors.Errorf("sys type %s is not supported", sysType)
+	return fmt.Errorf("sys type %s is not supported", sysType)
 }
 
 func ValidateProcType(procType string) error {
@@ -56,7 +57,7 @@ func ValidateProcType(procType string) error {
 			return nil
 		}
 	}
-	return errors.Errorf("processor type %s is not supported", procType)
+	return fmt.Errorf("processor type %s is not supported", procType)
 }
 
 func ValidateVMCapacity(catalogCapacity *appv1alpha1.Capacity, vmCapacity *appv1alpha1.Capacity) error {
@@ -65,23 +66,23 @@ func ValidateVMCapacity(catalogCapacity *appv1alpha1.Capacity, vmCapacity *appv1
 	} else {
 		catalogCPUCapacity, err := strconv.ParseFloat(catalogCapacity.CPU, 32)
 		if err != nil {
-			return errors.Wrap(err, "error parsing catalog cpu capacity")
+			return fmt.Errorf("error parsing catalog cpu capacity: %w", err)
 		}
 
 		vmCPUCapacity, err := strconv.ParseFloat(vmCapacity.CPU, 32)
 		if err != nil {
-			return errors.Wrap(err, "error parsing vm cpu capacity")
+			return fmt.Errorf("error parsing vm cpu capacity: %w", err)
 		}
 
 		if vmCPUCapacity > catalogCPUCapacity {
-			return errors.Errorf("vm cpu capacity should not exceed catalog cpu capacity. catalog cpu capacity: %f, vm cpu capacity: %f", catalogCPUCapacity, vmCPUCapacity)
+			return fmt.Errorf("vm cpu capacity should not exceed catalog cpu capacity. catalog cpu capacity: %f, vm cpu capacity: %f", catalogCPUCapacity, vmCPUCapacity)
 		}
 	}
 
 	if vmCapacity.Memory == 0 {
 		vmCapacity.Memory = catalogCapacity.Memory
 	} else if vmCapacity.Memory > catalogCapacity.Memory {
-		return errors.Errorf("vm memory capacity should not exceed catalog memory capacity. catalog memory capacity: %d, vm memory capacity: %d", catalogCapacity.Memory, vmCapacity.Memory)
+		return fmt.Errorf("vm memory capacity should not exceed catalog memory capacity. catalog memory capacity: %d, vm memory capacity: %d", catalogCapacity.Memory, vmCapacity.Memory)
 	}
 
 	return nil

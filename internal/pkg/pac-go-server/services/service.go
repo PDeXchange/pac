@@ -86,6 +86,11 @@ func GetService(c *gin.Context) {
 	}
 	service, err := kubeClient.GetService(serviceName)
 	if err != nil {
+		if errors.Is(err, utils.ErrResourceNotFound) {
+			logger.Error("service not found", zap.String("service name", serviceName), zap.Error(err))
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("service with name %s not found", serviceName)})
+			return
+		}
 		logger.Error("failed to get service", zap.String("service name", serviceName), zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
 		return

@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	capiutil "sigs.k8s.io/cluster-api/util"
@@ -67,7 +65,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	catalog := &appv1alpha1.Catalog{}
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: service.Spec.Catalog.Name}, catalog); err != nil {
-		return ctrl.Result{}, errors.Wrapf(err, "error retrieving catalog with name %s for service %s", service.Spec.Catalog.Name, service.Name)
+		return ctrl.Result{}, fmt.Errorf("error retrieving catalog with name %s for service %s: %w", service.Spec.Catalog.Name, service.Name, err)
 	}
 
 	scope, err := scope.NewServiceScope(ctx, scope.ServiceScopeParams{
@@ -80,7 +78,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		Service: service,
 	})
 	if err != nil {
-		return ctrl.Result{}, errors.Errorf("failed to create scope: %v", err)
+		return ctrl.Result{}, fmt.Errorf("failed to create scope: %w", err)
 	}
 
 	defer func() {
@@ -116,7 +114,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	case appv1alpha1.CatalogTypeVM:
 		svc = appservice.NewVM(scope)
 	default:
-		return ctrl.Result{}, errors.Errorf("unknown catalog type %s", catalog.Spec.Type)
+		return ctrl.Result{}, fmt.Errorf("unknown catalog type %s", catalog.Spec.Type)
 	}
 
 	if scope.Service.ObjectMeta.DeletionTimestamp.IsZero() {
@@ -129,7 +127,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	} else {
 		if controllerutil.ContainsFinalizer(scope.Service, appv1alpha1.ServiceFinalizer) {
 			if _, err = svc.Delete(ctx); err != nil {
-				return ctrl.Result{}, errors.Wrap(err, "error deleting the service")
+				return ctrl.Result{}, fmt.Errorf("error deleting the service: %w", err)
 			}
 
 			controllerutil.RemoveFinalizer(scope.Service, appv1alpha1.ServiceFinalizer)
@@ -157,11 +155,11 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Expired service will be deleted after 1 day by reconciler
 			if time.Now().After(scope.Service.Spec.Expiry.Time.Add(24 * time.Hour)) {
 				if err := scope.ControllerScope.Client.Delete(ctx, scope.Service); err != nil {
-					return ctrl.Result{}, errors.Wrap(err, "failed to delete service")
+					return ctrl.Result{}, fmt.Errorf("failed to delete service: %w", err)
 				}
 			}
 			if _, err := svc.Delete(ctx); err != nil {
-				return ctrl.Result{}, errors.Wrap(err, "error cleaning up service")
+				return ctrl.Result{}, fmt.Errorf("error cleaning up service: %w", err)
 			}
 
 			scope.Service.Status.AccessInfo = ""
@@ -174,7 +172,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			scope.Logger.Info("Service is in error state, hence recreating the service", "name", scope.Service.ObjectMeta.Name)
 			scope.Service.Status.Message = "Service is in error state, hence recreating the service"
 			if _, err := svc.Delete(ctx); err != nil {
-				return ctrl.Result{}, errors.Wrap(err, "error cleaning up service")
+				return ctrl.Result{}, fmt.Errorf("error cleaning up service: %w", err)
 			}
 			scope.Service.Status.AccessInfo = ""
 			scope.Service.Status.State = ""
@@ -184,7 +182,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if err := svc.Reconcile(ctx); err != nil {
-		err = errors.Wrap(err, "error reconciling service")
+		err = fmt.Errorf("error reconciling service: %w", err)
 		scope.Service.Status.State = appv1alpha1.ServiceStateError
 		scope.Service.Status.Message = err.Error()
 

@@ -2,10 +2,12 @@ package scope
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"errors"
+
 	"github.com/PDeXchange/pac/apis/app/v1alpha1"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/cluster-api/util/patch"
 )
 
@@ -35,8 +37,7 @@ func NewServiceScope(ctx context.Context, params ServiceScopeParams) (*ServiceSc
 
 	ctrlScope, err := NewControllerScope(ctx, params.ControllerScopeParams)
 	if err != nil {
-		err = errors.Wrap(err, "failed to init controller scope")
-		return scope, err
+		return scope, fmt.Errorf("failed to init controller scope: %w", err)
 	}
 	scope.ControllerScope = *ctrlScope
 
@@ -48,8 +49,7 @@ func NewServiceScope(ctx context.Context, params ServiceScopeParams) (*ServiceSc
 
 	serviceHelper, err := patch.NewHelper(params.Service, params.Client)
 	if err != nil {
-		err = errors.Wrap(err, "failed to init patch helper")
-		return scope, err
+		return scope, fmt.Errorf("failed to init patch helper: %w", err)
 	}
 	scope.servicePatchHelper = serviceHelper
 

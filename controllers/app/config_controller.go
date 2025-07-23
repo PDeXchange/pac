@@ -22,7 +22,6 @@ import (
 	"net/url"
 
 	manageiqv1alpha1 "github.com/PDeXchange/pac/apis/manageiq/v1alpha1"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/ppc64le-cloud/manageiq-client-go"
@@ -119,7 +118,7 @@ func (r *ConfigReconciler) reconcileServices(ctx context.Context, mq *manageiq.C
 				continue
 			}
 			if err := r.Delete(ctx, ss); err != nil {
-				return errors.Wrapf(err, "failed to delete resource: %s", ss.Name)
+				return fmt.Errorf("failed to delete resource %s: %w", ss.Name, err)
 			}
 			continue
 		}
