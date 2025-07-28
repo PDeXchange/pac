@@ -18,12 +18,13 @@ package scope
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/PDeXchange/pac/apis/app/v1alpha1"
 	"github.com/PDeXchange/pac/controllers/util"
 	"github.com/PDeXchange/pac/internal/pkg/client/platform"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 
 	"github.com/IBM/go-sdk-core/v5/core"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,7 +73,7 @@ func NewControllerScope(ctx context.Context, params ControllerScopeParams) (*Con
 
 	platformClient, err := platform.NewClient()
 	if err != nil {
-		return scope, errors.Wrap(err, "error creating platform services client")
+		return scope, fmt.Errorf("error creating platform services client: %w", err)
 	}
 	scope.PlatformClient = platformClient
 
@@ -91,7 +92,7 @@ func NewControllerScope(ctx context.Context, params ControllerScopeParams) (*Con
 		Zone:            zone,
 		Debug:           params.Debug})
 	if err != nil {
-		return scope, errors.Wrap(err, "failed to create powervs client")
+		return scope, fmt.Errorf("failed to create powervs client: %w", err)
 	}
 	scope.PowerVSClient = powerVSClient
 

@@ -2,8 +2,8 @@ package scope
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/cluster-api/util/patch"
 )
 
@@ -17,14 +17,14 @@ func NewCatalogScope(ctx context.Context, params CatalogScopeParams) (*CatalogSc
 
 	ctrlScope, err := NewControllerScope(ctx, params.ControllerScopeParams)
 	if err != nil {
-		return scope, errors.Wrap(err, "failed to init controller scope")
+		return scope, fmt.Errorf("failed to init controller scope: %w", err)
 	}
 
 	scope.ControllerScope = *ctrlScope
 
 	catalogHelper, err := patch.NewHelper(params.Catalog, params.Client)
 	if err != nil {
-		return scope, errors.Wrap(err, "failed to init patch helper")
+		return scope, fmt.Errorf("failed to init patch helper: %w", err)
 	}
 	scope.catalogPatchHelper = catalogHelper
 

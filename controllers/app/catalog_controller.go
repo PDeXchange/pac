@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	capiutil "sigs.k8s.io/cluster-api/util"
@@ -61,7 +59,7 @@ func filterOwnedServices(ctx context.Context, scope *appscope.CatalogScope) ([]c
 
 	var serviceList appv1alpha1.ServiceList
 	if err := scope.Client.List(ctx, &serviceList); err != nil {
-		return nil, errors.Wrap(err, "error listing services")
+		return nil, fmt.Errorf("error occurred while listing services: %w", err)
 	}
 
 	lists := []client.ObjectList{
@@ -70,7 +68,7 @@ func filterOwnedServices(ctx context.Context, scope *appscope.CatalogScope) ([]c
 
 	for _, list := range lists {
 		if err := meta.EachListItem(list, eachFunc); err != nil {
-			return nil, errors.Wrapf(err, "error finding owned services of catalog %s/%s", scope.Catalog.Namespace, scope.Catalog.Name)
+			return nil, fmt.Errorf("error occurred while finding owned services of catalog %s/%s: %w", scope.Catalog.Namespace, scope.Catalog.Name, err)
 		}
 	}
 
@@ -83,17 +81,17 @@ func reconcileVMCatalog(ctx context.Context, scope *appscope.CatalogScope) error
 	vm := &scope.Catalog.Spec.VM
 
 	if err := util.ValidateVMCapacity(&scope.Catalog.Spec.Capacity, &vm.Capacity); err != nil {
-		return errors.Wrap(err, "error validating vm capacity")
+		return fmt.Errorf("error validating vm capacity: %w", err)
 	}
 
 	powerVSGUID, _, _, _ := util.ParsePowerVSCRN(vm.CRN)
 
 	powerVSInstance, err := scope.PlatformClient.GetResourceInstance(ctx, powerVSGUID)
 	if err != nil {
-		return errors.Wrapf(err, "error retrieving powervs instance with id %s", powerVSGUID)
+		return fmt.Errorf("error retrieving powervs instance with id %s: %w", powerVSGUID, err)
 	}
 	if *powerVSInstance.State != "active" {
-		return errors.Errorf("powervs instance not in active state, current state: %s", *powerVSInstance.State)
+		return fmt.Errorf("powervs instance not in active state, current state: %s", *powerVSInstance.State)
 	}
 
 	image, err := scope.PowerVSClient.GetImageByName(vm.Image)
@@ -101,7 +99,7 @@ func reconcileVMCatalog(ctx context.Context, scope *appscope.CatalogScope) error
 		return err
 	}
 	if *image.State != "active" {
-		return errors.Errorf("image '%s' not in active state, current state: %s", vm.Image, *image.State)
+		return fmt.Errorf("image '%s' not in active state, current state: %s", vm.Image, *image.State)
 	}
 
 	if vm.Network != "" {
@@ -157,7 +155,7 @@ func (r *CatalogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	})
 
 	if err != nil {
-		return ctrl.Result{}, errors.Errorf("failed to create scope: %v", err)
+		return ctrl.Result{}, fmt.Errorf("failed to create scope: %w", err)
 	}
 
 	defer func() {
@@ -177,11 +175,11 @@ func (r *CatalogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if controllerutil.ContainsFinalizer(catalog, appv1alpha1.CatalogFinalizer) {
 			ownedServices, err := filterOwnedServices(ctx, scope)
 			if err != nil {
-				return ctrl.Result{}, errors.Wrap(err, "error filtering services owned by catalog")
+				return ctrl.Result{}, fmt.Errorf("error filtering services owned by catalog: %w", err)
 			}
 
 			if len(ownedServices) > 0 {
-				return ctrl.Result{RequeueAfter: time.Minute * 1}, errors.New("finalizer not removed since catalog still owning services")
+				return ctrl.Result{RequeueAfter: time.Minute * 1}, fmt.Errorf("finalizer not removed since catalog still owning services")
 			} else {
 				controllerutil.RemoveFinalizer(catalog, appv1alpha1.CatalogFinalizer)
 				if err = r.Update(ctx, catalog); err != nil {
@@ -204,7 +202,7 @@ func (r *CatalogReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err = reconcileVMCatalog(ctx, scope); err != nil {
 			catalog.Status.Ready = false
 			catalog.Status.Message = err.Error()
-			return ctrl.Result{}, errors.Wrap(err, "error reconciling vm catalog")
+			return ctrl.Result{}, fmt.Errorf("error reconciling vm catalog: %w", err)
 		}
 	default:
 		catalog.Status.Ready = false

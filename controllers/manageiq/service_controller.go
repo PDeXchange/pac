@@ -23,11 +23,12 @@ import (
 	"strings"
 	"time"
 
+	"errors"
+
 	"github.com/IBM-Cloud/power-go-client/power/models"
 	"github.com/IBM/go-sdk-core/v5/core"
 	"github.com/IBM/vpc-go-sdk/vpcv1"
 	appv1alpha1 "github.com/PDeXchange/pac/apis/app/v1alpha1"
-	"github.com/pkg/errors"
 	"github.com/ppc64le-cloud/manageiq-client-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,7 +99,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ 
 		Debug:   r.Debug,
 	})
 	if err != nil {
-		return ctrl.Result{}, errors.Errorf("failed to create scope: %v", err)
+		return ctrl.Result{}, fmt.Errorf("failed to create scope: %w", err)
 	}
 
 	defer func() {
@@ -168,17 +169,17 @@ func (r *ServiceReconciler) reconcileDelete(ctx context.Context, scope *ServiceS
 		ID: &lbID,
 	})
 	if err != nil {
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, errors.Wrap(err, "failed to GetLoadBalancer ")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("failed to GetLoadBalancer: %w", err)
 	}
 	if *lb.ProvisioningStatus != "active" {
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, errors.Errorf("loadbalancer state is not active(%s), hence delete later", *lb.ProvisioningStatus)
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("loadbalancer state is not active(%s), hence delete later", *lb.ProvisioningStatus)
 	}
 
 	listeners, _, err := scope.VPCClient.ListLoadBalancerListeners(&vpcv1.ListLoadBalancerListenersOptions{
 		LoadBalancerID: &lbID,
 	})
 	if err != nil {
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, errors.Wrap(err, "failed to list LoadBalancerListeners ")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("failed to list LoadBalancerListeners: %w", err)
 	}
 
 	for _, pool := range scope.BackendPools() {
@@ -189,7 +190,7 @@ func (r *ServiceReconciler) reconcileDelete(ctx context.Context, scope *ServiceS
 					LoadBalancerID: &lbID,
 					ID:             listener.ID,
 				}); err != nil {
-					return ctrl.Result{RequeueAfter: 30 * time.Second}, errors.Wrapf(err, "failed to delete LoadBalancerListener for id: %s", *listener.ID)
+					return ctrl.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("failed to delete LoadBalancerListener for id %s: %w", *listener.ID, err)
 				}
 			}
 		}
@@ -199,7 +200,7 @@ func (r *ServiceReconciler) reconcileDelete(ctx context.Context, scope *ServiceS
 		LoadBalancerID: &lbID,
 	})
 	if err != nil {
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, errors.Wrap(err, "failed to list LoadBalancerListeners ")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("failed to list LoadBalancerListeners: %w", err)
 	}
 
 	for _, pool := range scope.BackendPools() {
@@ -210,7 +211,7 @@ func (r *ServiceReconciler) reconcileDelete(ctx context.Context, scope *ServiceS
 					LoadBalancerID: &lbID,
 					ID:             p.ID,
 				}); err != nil {
-					return ctrl.Result{RequeueAfter: 30 * time.Second}, errors.Wrapf(err, "failed to delete LoadBalancerPool for id: %s", *p.ID)
+					return ctrl.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("failed to delete LoadBalancerPool for id %s: %w", *p.ID, err)
 				}
 			}
 		}
@@ -367,7 +368,7 @@ func GetOwnerConfig(ctx context.Context, c client.Client, obj metav1.ObjectMeta)
 		}
 		gv, err := schema.ParseGroupVersion(ref.APIVersion)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, fmt.Errorf("%s", err)
 		}
 		if gv.Group == appv1alpha1.GroupVersion.Group {
 			return GetConfigByName(ctx, c, obj.Namespace, ref.Name)
@@ -385,7 +386,7 @@ func GetConfigByName(ctx context.Context, c client.Client, namespace, name strin
 	}
 
 	if err := c.Get(ctx, key, cluster); err != nil {
-		return nil, errors.Wrapf(err, "failed to get Config/%s", name)
+		return nil, fmt.Errorf("failed to get Config/%s: %w", name, err)
 	}
 
 	return cluster, nil

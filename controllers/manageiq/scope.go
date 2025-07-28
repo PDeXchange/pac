@@ -2,14 +2,15 @@ package manageiq
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
 	"github.com/IBM/go-sdk-core/v5/core"
 	appv1alpha1 "github.com/PDeXchange/pac/apis/app/v1alpha1"
 	manageiqv1alpha1 "github.com/PDeXchange/pac/apis/manageiq/v1alpha1"
 	"github.com/PDeXchange/pac/internal/pkg/client/powervs"
 	"github.com/PDeXchange/pac/internal/pkg/client/vpc"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"github.com/ppc64le-cloud/manageiq-client-go"
 	corev1 "k8s.io/api/core/v1"
 	t "k8s.io/apimachinery/pkg/types"
@@ -66,8 +67,7 @@ func NewServiceScope(ctx context.Context, params ServiceScopeParams) (scope *Ser
 
 	helper, err := patch.NewHelper(params.Service, params.Client)
 	if err != nil {
-		err = errors.Wrap(err, "failed to init patch helper")
-		return
+		return scope, fmt.Errorf("failed to init patch helper: %w", err)
 	}
 	scope.patchHelper = helper
 
@@ -95,7 +95,7 @@ func NewServiceScope(ctx context.Context, params ServiceScopeParams) (scope *Ser
 		Zone:            config.Spec.PowerVS.Zone,
 		Debug:           params.Debug})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create powervs client")
+		return nil, fmt.Errorf("failed to create powervs client: %w", err)
 	}
 	scope.PowerVSClient = client
 
@@ -105,7 +105,7 @@ func NewServiceScope(ctx context.Context, params ServiceScopeParams) (scope *Ser
 
 	vpc, err := vpc.NewClient(ctx, vpc.Options{Region: config.Spec.VPC.Region})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create vpc client")
+		return nil, fmt.Errorf("failed to create vpc client: %w", err)
 	}
 	scope.VPCClient = vpc
 

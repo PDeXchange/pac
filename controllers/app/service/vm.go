@@ -7,11 +7,12 @@ import (
 	"strconv"
 	"strings"
 
+	"errors"
+
 	"github.com/IBM-Cloud/power-go-client/power/models"
 	"github.com/IBM/go-sdk-core/v5/core"
 	appv1alpha1 "github.com/PDeXchange/pac/apis/app/v1alpha1"
 	"github.com/PDeXchange/pac/controllers/app/scope"
-	"github.com/pkg/errors"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
 )
 
@@ -27,14 +28,14 @@ var (
 func getAvailablePubNetwork(scope *scope.ServiceScope) (string, error) {
 	networks, err := scope.PowerVSClient.GetNetworks()
 	if err != nil {
-		return "", errors.Wrap(err, "error get all networks")
+		return "", fmt.Errorf("error get all networks: %w", err)
 	}
 
 	for _, nw := range networks.Networks {
 		if *nw.Type == "pub-vlan" {
 			network, err := scope.PowerVSClient.GetNetwork(*nw.NetworkID)
 			if err != nil {
-				return "", errors.Wrapf(err, "error get network with id %s", *nw.NetworkID)
+				return "", fmt.Errorf("error get network with id %s: %w", *nw.NetworkID, err)
 			}
 
 			if *network.IPAddressMetrics.Available > 0 {
@@ -65,13 +66,13 @@ func NewVM(scope *scope.ServiceScope) Interface {
 func (s *VM) Reconcile(ctx context.Context) error {
 	if s.scope.Service.Status.VM.InstanceID == "" {
 		if err := createVM(s.scope); err != nil {
-			return errors.Wrap(err, "error creating vm")
+			return fmt.Errorf("error creating vm: %w", err)
 		}
 	}
 
 	pvmInstance, err := s.scope.PowerVSClient.GetVM(s.scope.Service.Status.VM.InstanceID)
 	if err != nil {
-		return errors.Wrap(err, "error get vm")
+		return fmt.Errorf("error get vm: %w", err)
 	}
 
 	updateStatus(s.scope, pvmInstance)
@@ -86,7 +87,7 @@ func (s *VM) Delete(ctx context.Context) (bool, error) {
 	}
 
 	if err := cleanupVM(s.scope); err != nil {
-		return false, errors.Wrap(err, "error cleaning up vm")
+		return false, fmt.Errorf("error cleaning up vm: %w", err)
 	}
 	s.scope.Service.Status.ClearVMStatus()
 
@@ -148,7 +149,7 @@ func createVM(scope *scope.ServiceScope) error {
 		var err error
 		networkID, err = getAvailablePubNetwork(scope)
 		if err != nil && err != ErroNoPublicNetwork {
-			return errors.Wrap(err, "error retrieving available public network in powervs instance")
+			return fmt.Errorf("error retrieving available public network in powervs instance: %w", err)
 		} else if err == ErroNoPublicNetwork {
 			// create a public network and use it
 			network, err := scope.PowerVSClient.CreateNetwork(&models.NetworkCreate{
@@ -157,21 +158,21 @@ func createVM(scope *scope.ServiceScope) error {
 				DNSServers: dnsServers,
 			})
 			if err != nil {
-				return errors.Wrap(err, "error creating public network")
+				return fmt.Errorf("error creating public network: %w", err)
 			}
 			networkID = *network.NetworkID
 		}
 	} else {
 		nwRef, err := scope.PowerVSClient.GetNetworkByName(vmSpec.Network)
 		if err != nil {
-			return errors.Wrapf(err, "error retrieving network by name %s", vmSpec.Network)
+			return fmt.Errorf("error retrieving network by name %s: %w", vmSpec.Network, err)
 		}
 		networkID = *nwRef.NetworkID
 	}
 
 	imageRef, err := scope.PowerVSClient.GetImageByName(vmSpec.Image)
 	if err != nil {
-		return errors.Wrapf(err, "error retrieving image by name %s", vmSpec.Image)
+		return fmt.Errorf("error retrieving image by name %s: %w", vmSpec.Image, err)
 	}
 
 	memory := float64(vmSpec.Capacity.Memory)
