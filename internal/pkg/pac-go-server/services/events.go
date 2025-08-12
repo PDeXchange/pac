@@ -85,3 +85,8 @@ func getPaginationLink(c *gin.Context, page int64) string {
 	queryParams.Set("page", strconv.FormatInt(page, 10))
 	return c.Request.URL.Path + "?" + queryParams.Encode()
 }
+
+// SetEventCapping caps event to given value
+func SetEventCapping(cap int64) error {
+	return dbCon.SetEventCapping(cap)
+}
