@@ -1,23 +1,20 @@
 package models
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"errors"
+	"fmt"
+	"strings"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Rating string
 
 const (
-	Positive Rating = "Positive"
-	Negative Rating = "Negative"
-	Neutral  Rating = "Neutral"
+	Positive Rating = "positive"
+	Negative Rating = "negative"
+	Neutral  Rating = "neutral"
 )
-
-func (r Rating) IsValid() bool {
-	switch r {
-	case Positive, Negative, Neutral:
-		return true
-	default:
-		return false
-	}
-}
 
 type Feedback struct {
 	ID      primitive.ObjectID `json:"id" bson:"_id,omitempty"`
@@ -28,4 +25,24 @@ type Feedback struct {
 
 type FeedbacksFilter struct {
 	UserID string
+}
+
+func (f Feedback) ValidateFeedback() []error {
+	var errs []error
+	if !f.Rating.IsValidRating() {
+		errs = append(errs, fmt.Errorf("invalid rating %s, allowed values: Negative, Neutral, Positive", f.Rating))
+	}
+	if len(f.Comment) > 250 {
+		errs = append(errs, errors.New("comment must not exceed 250 characters"))
+	}
+	return errs
+}
+
+func (r Rating) IsValidRating() bool {
+	switch strings.ToLower(string(r)) {
+	case string(Positive), string(Negative), string(Neutral):
+		return true
+	default:
+		return false
+	}
 }
