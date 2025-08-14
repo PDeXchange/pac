@@ -511,6 +511,30 @@ func getResource(apiType string, customValues map[string]interface{}) interface{
 			LastName:  utils.Ptr("lastname"),
 		}
 		return []*gocloak.User{&user}
+	case "create-feedback":
+		feedback := models.Feedback{
+			ID:      [12]byte{1},
+			UserID:  "12345",
+			Rating:  "Positive",
+			Comment: "good",
+		}
+		// Update service with custom values if provided
+		for key, value := range customValues {
+			if fieldValue := reflect.ValueOf(&feedback).Elem().FieldByName(key); fieldValue.IsValid() {
+				if value != nil {
+					fieldValue.Set(reflect.ValueOf(value))
+				}
+			}
+		}
+		return &feedback
+	case "get-feedbacks":
+		feedback := models.Feedback{
+			Rating:  "Positive",
+			UserID:  "12345",
+			ID:      [12]byte{1},
+			Comment: "Very good product",
+		}
+		return []models.Feedback{feedback}
 	default:
 		return nil
 	}
