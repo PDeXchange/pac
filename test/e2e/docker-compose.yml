@@ -1,0 +1,67 @@
+services:
+  # MongoDB service
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017" # Expose MongoDB on localhost:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=dummypasswd # dummy password for e2e tests
+    networks:
+      - kind-net
+
+  # Keycloak service
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    restart: unless-stopped
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: dummypasswd
+      KC_HOSTNAME: keycloak
+      KC_HOSTNAME_STRICT: 'true'
+    command: start-dev
+    ports:
+      - "8080:8080"
+    networks:
+      - kind-net
+
+  keycloak-setup:
+    image: curlimages/curl:latest  # lightweight image with curl
+    depends_on:
+      - keycloak
+    volumes:
+      - ./scripts/keycloak:/opt/scripts:ro
+    entrypoint: ["/bin/sh", "-c", "/opt/scripts/setup-keycloak.sh"]
+    environment:
+      - KEYCLOAK_HOSTNAME=http://keycloak:8080
+    networks:
+      - kind-net
+
+  pac-go-service:
+    image: localhost/pac:e2e-test
+    container_name: pac-go-service
+    environment:
+      - MONGODB_URI=mongodb://root:dummypasswd@mongo:27017
+      - KEYCLOAK_HOSTNAME=http://keycloak:8080
+      - KEYCLOAK_REALM=pac
+      - KEYCLOAK_CLIENT_ID=my-service-client
+      - KEYCLOAK_CLIENT_SECRET=my-secret
+      - KUBERNETES_SERVER=${KUBERNETES_SERVER:-https://host.containers.internal:6443}
+      - KUBERNETES_MASTER=${KUBERNETES_MASTER:-https://host.containers.internal:6443}
+      - KUBECONFIG=/home/nonroot/.kube/config
+    volumes:
+      - ./kubeconfig/config:/home/nonroot/.kube/config:ro
+    entrypoint: ["./pac-go-server"]
+    depends_on:
+      - mongo
+      - keycloak-setup
+    ports:
+      - "8000:8000"
+    networks:
+      - kind-net
+
+networks:
+  kind-net:
+    driver: bridge
