@@ -1,0 +1,8 @@
+namespace: pac-system
+namePrefix: pac-
+bases:
+- ../crd
+- ../rbac
+- ../manager/overlays/test
+patchesStrategicMerge:
+- manager_auth_proxy_patch.yaml
