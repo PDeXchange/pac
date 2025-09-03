@@ -1,0 +1,7 @@
+test:
+  PAC_GO_SERVER: "http://localhost:8000"
+  MONGODB_URI: "mongodb://root:dummypasswd@localhost:27017"
+  KEYCLOAK_HOSTNAME: "http://localhost:8080"
+  KEYCLOAK_REALM: "pac"
+  KEYCLOAK_CLIENT_ID: "my-service-client"
+  KEYCLOAK_CLIENT_SECRET: "my-secret"
