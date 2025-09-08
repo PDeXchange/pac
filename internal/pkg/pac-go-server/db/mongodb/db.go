@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -62,4 +63,19 @@ func (db *MongoDB) Connect() error {
 
 func (db *MongoDB) Disconnect() error {
 	return db.client.Disconnect(context.Background())
+}
+
+func (db *MongoDB) CollectionExists(name string) (bool, error) {
+	colNames, err := db.Database.ListCollectionNames(context.Background(), bson.M{"name": name})
+	if err != nil {
+		return false, fmt.Errorf("failed to list collections from DB: %w", err)
+	}
+
+	if len(colNames) == 0 {
+		// collection does not exist
+		return false, nil
+	}
+
+	// collection exists
+	return true, nil
 }
