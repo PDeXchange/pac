@@ -48,6 +48,21 @@ func (mr *MockDBMockRecorder) AcceptTermsAndConditions(arg0 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptTermsAndConditions", reflect.TypeOf((*MockDB)(nil).AcceptTermsAndConditions), arg0)
 }
 
+// CollectionExists mocks base method.
+func (m *MockDB) CollectionExists(arg0 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CollectionExists", arg0)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CollectionExists indicates an expected call of CollectionExists.
+func (mr *MockDBMockRecorder) CollectionExists(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CollectionExists", reflect.TypeOf((*MockDB)(nil).CollectionExists), arg0)
+}
+
 // Connect mocks base method.
 func (m *MockDB) Connect() error {
 	m.ctrl.T.Helper()
