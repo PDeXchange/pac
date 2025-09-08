@@ -54,9 +54,18 @@ func main() {
 	}
 	defer disconnect()
 	services.SetDB(db)
-	if err := db.SetEventCapping(cappedEvents); err != nil {
-		l.Fatal("Capping event notifier failed", zap.Error(err))
+
+	exists, err := db.CollectionExists("events")
+	if err != nil {
+		l.Fatal("Failed to check if collection exists", zap.Error(err))
 	}
+
+	if !exists {
+		if err := db.SetEventCapping(cappedEvents); err != nil {
+			l.Fatal("Capping event notifier failed", zap.Error(err))
+		}
+	}
+
 	mailClient := mail.New(envPrefixForEmail)
 	notifier(db, mailClient)
 }
