@@ -36,7 +36,8 @@ jobs:
       - name: Run unit tests
         run: |
           mkdir -p out
-          go test -coverprofile=out/coverage.out -v ./...
+          # Skip running UTs for test/e2e folder
+          go list ./... | grep -v 'test/e2e' | xargs go test -coverprofile=out/coverage.out -v
 
       - name: Generate HTML coverage report
         run: |

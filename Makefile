@@ -1,4 +1,3 @@
-
 # Image URL to use all building/pushing image targets
 IMG ?= ghcr.io/pdexchange/pac:main
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -121,7 +120,6 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
@@ -168,3 +166,21 @@ swagger: $(SWAGGER) ## Generate swagger docs for APIs.
 $(SWAGGER): $(LOCALBIN)
 	test -s $(LOCALBIN)/swag || GOBIN=$(LOCALBIN) go install github.com/swaggo/swag/cmd/swag@latest
 	$(SWAGGER) init -g cmd/swagger/main.go -o docs
+
+##@ Testing E2E
+.PHONY: test-deploy
+test-deploy: kustomize ## Deploy controller to the K8s cluster specified in the provided KUBECONFIG or ~/.kube/config.
+	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.18.0
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	KUBECONFIG=${KUBECONFIG:-~/.kube/config} $(KUSTOMIZE) build config/test | kubectl apply -f -
+
+.PHONY: test-e2e
+test-e2e: ## Run end-to-end tests by executing the below scripts.
+	./test/e2e/scripts/build.sh
+	./test/e2e/scripts/deploy.sh
+	./test/e2e/scripts/runner.sh
+	./test/e2e/scripts/cleanup.sh
+
+.PHONY: test-e2e-cleanup
+test-e2e-cleanup: ## Cleanup files generated as part of test-e2e
+	./test/e2e/scripts/cleanup.sh
