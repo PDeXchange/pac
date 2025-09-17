@@ -85,8 +85,7 @@ func CreateKey(c *gin.Context) {
 	// Step0: Get the authenticated user's ID
 	userID := c.Request.Context().Value("userid").(string)
 
-	if err := c.BindJSON(&key); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if ok, _ := utils.BindAndValidate(c, &key); !ok {
 		return
 	}
 	key.UserID = userID

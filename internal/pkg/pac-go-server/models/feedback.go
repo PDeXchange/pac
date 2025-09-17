@@ -40,15 +40,15 @@ type FeedbacksFilter struct {
 	UserID string
 }
 
-func (f Feedback) ValidateFeedback() []error {
-	var errs []error
+func (f Feedback) ValidateFeedback() error {
+	var err error
 	if !f.Rating.IsValidRating() {
-		errs = append(errs, fmt.Errorf("invalid rating %s, allowed values: Negative, Neutral, Positive", f.Rating))
+		return fmt.Errorf("invalid rating %s, allowed values: Negative, Neutral, Positive", f.Rating)
 	}
 	if len(f.Comment) > 250 {
-		errs = append(errs, errors.New("comment must not exceed 250 characters"))
+		return errors.New("comment must not exceed 250 characters")
 	}
-	return errs
+	return err
 }
 
 func (r Rating) IsValidRating() bool {
