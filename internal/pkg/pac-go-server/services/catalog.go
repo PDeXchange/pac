@@ -12,6 +12,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	pac "github.com/PDeXchange/pac/apis/app/v1alpha1"
+	clientUtils "github.com/PDeXchange/pac/internal/pkg/client/utils"
 	log "github.com/PDeXchange/pac/internal/pkg/pac-go-server/logger"
 	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/models"
 	"github.com/PDeXchange/pac/internal/pkg/pac-go-server/utils"
@@ -303,6 +304,11 @@ func validateCreateCatalogParams(catalog models.Catalog) []error {
 		vm := catalog.VM
 		if vm.CRN == "" {
 			errs = append(errs, errors.New("for catalog type VM crn should be set"))
+		} else {
+			// if CRN is present, make sure its valid
+			if err := clientUtils.ValidateResourceCRN(vm.CRN); err != nil {
+				errs = append(errs, err)
+			}
 		}
 		if vm.SystemType == "" {
 			errs = append(errs, errors.New("for catalog type VM system_type should be set"))

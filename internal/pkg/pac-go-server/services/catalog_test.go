@@ -40,6 +40,13 @@ func TestCreateCatalog(t *testing.T) {
 			httpStatus:     http.StatusCreated,
 		},
 		{
+			name:           "invalid crn",
+			mockFunc:       func() {},
+			requestContext: formContext(customValues{"userid": "12345"}),
+			catalog:        getResource("create-catalog", customValues{"CRN": "test-crn"}).(models.Catalog),
+			httpStatus:     http.StatusBadRequest,
+		},
+		{
 			name:           "invalid image thumbnail in catalog",
 			mockFunc:       func() {},
 			requestContext: formContext(customValues{"userid": "12345"}),

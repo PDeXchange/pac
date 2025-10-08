@@ -97,7 +97,7 @@ func getResource(apiType string, customValues map[string]interface{}) interface{
 			Memory: 2,
 		}
 		vm := models.VM{
-			CRN:           "test-crn",
+			CRN:           "crn:v1:bluemix:public:power-iaas:eu-de:a/abcdef1234567890abcdef1234567890:abcd1234-ab12-cd34-ef56-abcdef123456::",
 			ProcessorType: "ppc",
 			SystemType:    "test",
 			Image:         "image",
@@ -126,6 +126,10 @@ func getResource(apiType string, customValues map[string]interface{}) interface{
 			if fieldValue := reflect.ValueOf(&catalog).Elem().FieldByName(key); fieldValue.IsValid() {
 				if value != nil {
 					fieldValue.Set(reflect.ValueOf(value))
+				}
+			} else if vmField := reflect.ValueOf(&catalog.VM).Elem().FieldByName(key); vmField.IsValid() {
+				if value != nil {
+					vmField.Set(reflect.ValueOf(value))
 				}
 			}
 		}

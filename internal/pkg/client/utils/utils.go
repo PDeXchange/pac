@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 	"fmt"
+	"regexp"
+
 	"github.com/IBM/go-sdk-core/v5/core"
 	"github.com/IBM/platform-services-go-sdk/iamidentityv1"
 	"github.com/PDeXchange/pac/internal/pkg/client/platform"
@@ -25,4 +27,15 @@ func GetAccountID(ctx context.Context, auth *core.IamAuthenticator) (string, err
 	}
 
 	return *apiKey.AccountID, nil
+}
+
+// resourceCRNRegexp - regex pattern for IBM Resource CRN
+var resourceCRNRegexp = regexp.MustCompile(`^crn:v[0-9]:(?P<cloudName>[^:]*):(?P<cloudType>[^:]*):(?P<serviceName>[^:]*):(?P<location>[^:]*):(?P<scope>[^:]*):(?P<guid>[^:]*):(?P<resourceType>[^:]*):(?P<resourceID>[^:]*)$`)
+
+// ValidateResourceCRN - validates provided IBM Resource CRN string
+func ValidateResourceCRN(crn string) error {
+	if !resourceCRNRegexp.MatchString(crn) {
+		return fmt.Errorf("provided CRN is invalid")
+	}
+	return nil
 }
